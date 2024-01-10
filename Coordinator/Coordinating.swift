@@ -6,7 +6,13 @@
 //  MIT License · http://choosealicense.com/licenses/mit/
 //
 
+#if canImport(AppKit) && !targetEnvironment(macCatalyst)
+import AppKit
+#endif
+
+#if canImport(UIKit)
 import UIKit
+#endif
 
 ///	Protocol to define what is required for an object to be Coordinator.
 ///
@@ -26,7 +32,7 @@ public protocol Coordinating: AnyObject {
 	var childCoordinators: [String: Coordinating] { get }
 	
 	///	Returns either `parent` coordinator or `nil` if there isn‘t one
-	var coordinatingResponder: UIResponder? { get }
+	var coordinatingResponder: Responder? { get }
 	
 	///	Tells the coordinator to start, which means at the end of this method it should
 	///	display some UIViewController.

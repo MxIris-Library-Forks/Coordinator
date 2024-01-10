@@ -6,10 +6,16 @@
 //  MIT License · http://choosealicense.com/licenses/mit/
 //
 
-import UIKit
+#if canImport(AppKit) && !targetEnvironment(macCatalyst)
+import AppKit
+#endif
 
-//	Inject parentCoordinator property into all UIViewControllers
-extension UIViewController {
+#if canImport(UIKit)
+import UIKit
+#endif
+
+//	Inject parentCoordinator property into all NS/UIViewControllers
+extension ViewController {
     private class WeakCoordinatingTrampoline: NSObject {
         weak var coordinating: Coordinating?
     }
@@ -38,15 +44,21 @@ extension UIViewController {
 /**
 Driving engine of the message passing through the app, with no need for Delegate pattern nor Singletons.
 
-It piggy-backs on the `UIResponder.next` in order to pass the message through UIView/UIVC hierarchy of any depth and complexity.
-However, it does not interfere with the regular `UIResponder` functionality.
+It piggy-backs on the `NS/UIResponder.next` in order to pass the message through NSUIView/NSUIVC hierarchy of any depth and complexity.
+However, it does not interfere with the regular `NS/UIResponder` functionality.
 
-At the `UIViewController` level (see below), it‘s intercepted to switch up to the coordinator, if the UIVC has one.
+At the `NS/UIViewController` level (see below), it‘s intercepted to switch up to the coordinator, if the NSUIVC has one.
 Once that happens, it stays in the `Coordinator` hierarchy, since coordinator can be nested only inside other coordinators.
 */
-extension UIResponder {
-	@objc open var coordinatingResponder: UIResponder? {
-		return next
+extension Responder {
+	@objc open var coordinatingResponder: Responder? {
+        #if canImport(AppKit) && !targetEnvironment(macCatalyst)
+        return nextResponder
+        #endif
+        
+        #if canImport(UIKit)
+        return next
+        #endif
 	}
 
 	/*
@@ -58,10 +70,10 @@ extension UIResponder {
 	*/
 }
 
-extension UIResponder {
-	///	Searches upwards the responder chain for the `Coordinator` that manages current `UIViewController`
+extension Responder {
+	///	Searches upwards the responder chain for the `Coordinator` that manages current `NS/UIViewController`
 	public var containingCoordinator: Coordinating? {
-		if let vc = self as? UIViewController, let pc = vc.parentCoordinator {
+		if let vc = self as? ViewController, let pc = vc.parentCoordinator {
 			return pc
 		}
 		
@@ -70,33 +82,33 @@ extension UIResponder {
 }
 
 
-extension UIViewController {
+extension ViewController {
 /**
 	Returns `parentCoordinator` if this controller has one,
-	or its parent `UIViewController` if it has one,
+	or its parent `NS/UIViewController` if it has one,
 	or its view's `superview`.
 
-	Copied from `UIResponder.next` documentation:
+	Copied from `NS/UIResponder.next` documentation:
 
-	- The `UIResponder` class does not store or set the next responder automatically,
+	- The `NS/UIResponder` class does not store or set the next responder automatically,
 	instead returning nil by default.
 
 	- Subclasses must override this method to set the next responder.
 
-	- UIViewController implements the method by returning its view’s superview;
-	- UIWindow returns the application object, and UIApplication returns nil.
+	- NS/UIViewController implements the method by returning its view’s superview;
+	- UIWindow returns the application object, and NS/UIApplication returns nil.
 */
-	override open var coordinatingResponder: UIResponder? {
+	override open var coordinatingResponder: Responder? {
 		guard let parentCoordinator = self.parentCoordinator else {
 			guard let parentController = self.parent else {
 				guard let presentingController = self.presentingViewController else {
 					return view.superview
 				}
-				return presentingController as UIResponder
+				return presentingController as Responder
 			}
-			return parentController as UIResponder
+			return parentController as Responder
 		}
-		return parentCoordinator as? UIResponder
+		return parentCoordinator as? Responder
 	}
 }
 

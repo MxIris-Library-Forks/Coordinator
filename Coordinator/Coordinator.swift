@@ -6,7 +6,13 @@
 //  MIT License · http://choosealicense.com/licenses/mit/
 //
 
+#if canImport(AppKit) && !targetEnvironment(macCatalyst)
+import AppKit
+#endif
+
+#if canImport(UIKit)
 import UIKit
+#endif
 
 
 ///	Simple closure which allows you to wrap any coordinatingResponder method and
@@ -41,16 +47,16 @@ Expose to Coordinator only those behaviors that cause push/pop/present to bubble
 */
 
 
-///	Main Coordinator instance, where T is UIViewController or any of its subclasses.
+///	Main Coordinator instance, where T is NS/UIViewController or any of its subclasses.
 @MainActor
-open class Coordinator<T: UIViewController>: UIResponder, Coordinating {
+open class Coordinator<T: ViewController>: Responder, Coordinating {
 	public let rootViewController: T
 
 
-	/// You need to supply UIViewController (or any of its subclasses) that will be loaded as root of the UI hierarchy.
+	/// You need to supply NS/UIViewController (or any of its subclasses) that will be loaded as root of the UI hierarchy.
 	///	Usually one of container controllers (UINavigationController, UITabBarController etc).
 	///
-	/// - parameter rootViewController: UIViewController at the top of the hierarchy.
+	/// - parameter rootViewController: NS/UIViewController at the top of the hierarchy.
 	/// - returns: Coordinator instance, fully prepared but started yet.
 	///
 	///	Note: if you override this init, you must call `super`.
@@ -62,6 +68,12 @@ open class Coordinator<T: UIViewController>: UIResponder, Coordinating {
 		super.init()
 	}
 
+    #if canImport(AppKit) && !targetEnvironment(macCatalyst)
+    public required init?(coder: NSCoder) {
+        fatalError("")
+    }
+    #endif
+
 
 	open lazy var identifier: String = {
 		return String(describing: type(of: self))
@@ -69,8 +81,8 @@ open class Coordinator<T: UIViewController>: UIResponder, Coordinating {
 
 
 	///	Next coordinatingResponder for any Coordinator instance is its parent Coordinator.
-	open override var coordinatingResponder: UIResponder? {
-		return parent as? UIResponder
+	open override var coordinatingResponder: Responder? {
+		return parent as? Responder
 	}
 
 
